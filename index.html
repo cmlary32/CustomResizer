@@ -3,135 +3,383 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>1024×1024 Texture Batch Resizer</title>
+  <title>CUSTOM RESIZER // 1024×1024</title>
   <style>
-    :root {
-      --bg: #111317;
-      --panel: #191d24;
-      --border: #2b3240;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-text: #081018;
+    @font-face {
+      font-family: 'PocketMonk';
+      src: url('./PocketMonk-15ze.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
     }
-    * { box-sizing: border-box; }
+
+    @font-face {
+      font-family: 'Segikan';
+      src: url('./SegikanBold-1G0qL.otf') format('opentype');
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #000000;
+      --surface: #070707;
+      --fg: #ffffff;
+      --fg-muted: #999999;
+      --border: #333333;
+      --matrix: #00ff41;
+      --matrix-dim: rgba(0, 255, 65, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 36px 18px;
-    }
-    .wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-    }
-    h1 { margin: 0 0 8px; font-size: 1.4rem; }
-    p { margin: 0 0 18px; color: var(--muted); line-height: 1.5; }
-    .controls {
+      min-height: 100vh;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      color: var(--fg);
+      font-family: 'Segikan', system-ui, -apple-system, sans-serif;
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
       align-items: center;
-      margin-bottom: 16px;
+      justify-content: center;
+      padding: 32px 16px;
+      position: relative;
     }
-    input[type="file"] { color: var(--muted); }
-    label {
+
+    /* Subtle CRT scanline overlay */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.45) 3px,
+        rgba(0, 0, 0, 0.45) 4px
+      );
+      z-index: 10;
+    }
+
+    .terminal {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border: 1px solid var(--fg);
+      box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--border);
+      padding: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 22px;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-muted);
+    }
+
+    .status-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-      color: var(--muted);
+      gap: 8px;
+      color: var(--fg);
     }
-    input[type="text"] {
-      width: 130px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--matrix);
+      box-shadow: 0 0 8px var(--matrix);
+      display: inline-block;
     }
-    button {
-      background: var(--accent);
-      color: var(--accent-text);
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-weight: 600;
+
+    h1, h2 {
+      font-family: 'PocketMonk', sans-serif;
+      font-weight: normal;
+      margin: 0;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3rem);
+      line-height: 1.05;
+      color: var(--fg);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      color: var(--fg-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      letter-spacing: 0.03em;
+    }
+
+    .dropzone {
+      border: 1px dashed var(--fg);
+      background: #000000;
+      padding: 26px 20px;
+      text-align: center;
       cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      margin-bottom: 20px;
     }
-    button:hover { filter: brightness(1.06); }
-    #log {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 8px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--matrix);
+      border-style: solid;
+      background: var(--matrix-dim);
+    }
+
+    .dropzone-title {
+      font-family: 'PocketMonk', sans-serif;
+      font-size: 1.35rem;
+      color: var(--fg);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .dropzone-meta {
       font-size: 0.85rem;
-      color: #cbd5e1;
+      color: var(--fg-muted);
+      letter-spacing: 0.05em;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--fg-muted);
+    }
+
+    .field input,
+    .field select {
+      background: #000000;
+      color: var(--fg);
+      border: 1px solid var(--fg);
+      padding: 11px 12px;
+      font-family: 'Segikan', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      border-radius: 0;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--matrix);
+      box-shadow: inset 0 0 0 1px var(--matrix);
+    }
+
+    button#run {
+      background: var(--fg);
+      color: #000000;
+      border: 1px solid var(--fg);
+      padding: 11px 22px;
+      font-family: 'Segikan', sans-serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button#run:hover {
+      background: var(--matrix);
+      border-color: var(--matrix);
+      box-shadow: 0 0 16px rgba(0, 255, 65, 0.45);
+    }
+
+    .log-header {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--fg-muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #log {
+      background: #000000;
+      border: 1px solid var(--border);
+      padding: 14px;
+      font-family: 'Segikan', monospace;
+      font-size: 0.85rem;
+      line-height: 1.55;
+      color: var(--fg);
       white-space: pre-line;
-      min-height: 72px;
+      min-height: 92px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .ok {
+      color: var(--matrix);
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>1024×1024 Texture Batch Resizer</h1>
-    <p>Runs 100% locally in your browser—no uploads, accounts, or paywalls.</p>
-
-    <div class="controls">
-      <input id="files" type="file" accept="image/*" multiple />
-      <label>
-        Suffix
-        <input id="suffix" type="text" value="_1024" />
-      </label>
-      <button id="run" type="button">Resize &amp; Download PNGs</button>
+  <main class="terminal">
+    <div class="top-bar">
+      <span>SYS // LOCAL TEXTURE PROCESSOR</span>
+      <span class="status-pill"><span class="status-dot"></span> CLIENT-SIDE ONLY</span>
     </div>
 
-    <div id="log">Waiting for files...</div>
-  </div>
+    <h1>CUSTOM RESIZER</h1>
+    <p class="subtitle">Batch downsample 2K, 4K, and 8K maps locally in memory. Zero uploads. Zero server trace.</p>
+
+    <label class="dropzone" id="dropzone" for="files">
+      <span class="dropzone-title">LOAD TEXTURE MAPS</span>
+      <span class="dropzone-meta" id="file-count">Click to browse or drag &amp; drop PNG / JPG / WEBP files</span>
+    </label>
+    <input id="files" type="file" accept="image/*" multiple />
+
+    <div class="controls">
+      <div class="field">
+        <label for="resolution">Target Grid</label>
+        <select id="resolution">
+          <option value="512">512 × 512</option>
+          <option value="1024" selected>1024 × 1024</option>
+          <option value="2048">2048 × 2048</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="suffix">Filename Suffix</label>
+        <input id="suffix" type="text" value="_1024" />
+      </div>
+
+      <button id="run" type="button">Execute Batch</button>
+    </div>
+
+    <div class="log-header">
+      <span>OUTPUT STREAM</span>
+      <span>FORMAT: PNG</span>
+    </div>
+    <div id="log">&gt; Awaiting texture input...</div>
+  </main>
 
   <script>
+    const filesInput = document.getElementById("files");
+    const dropzone = document.getElementById("dropzone");
+    const fileCount = document.getElementById("file-count");
+    const resSelect = document.getElementById("resolution");
+    const suffixInput = document.getElementById("suffix");
     const logEl = document.getElementById("log");
-    const log = (msg) => { logEl.textContent += msg + "\n"; };
+
+    let selectedFiles = [];
+
+    resSelect.addEventListener("change", () => {
+      suffixInput.value = `_${resSelect.value}`;
+    });
+
+    function setFiles(fileList) {
+      selectedFiles = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      if (selectedFiles.length === 0) {
+        fileCount.textContent = "Click to browse or drag & drop PNG / JPG / WEBP files";
+        return;
+      }
+      fileCount.textContent = `${selectedFiles.length} texture${selectedFiles.length === 1 ? "" : "s"} queued`;
+      logEl.textContent = `> Queued ${selectedFiles.length} file(s). Ready to execute.`;
+    }
+
+    filesInput.addEventListener("change", (e) => setFiles(e.target.files));
+
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer?.files) {
+        setFiles(e.dataTransfer.files);
+      }
+    });
 
     document.getElementById("run").addEventListener("click", async () => {
-      const files = Array.from(document.getElementById("files").files);
-      const suffix = document.getElementById("suffix").value;
-      if (!files.length) {
-        logEl.textContent = "Select one or more texture files first.";
+      if (!selectedFiles.length) {
+        logEl.textContent = "> ERROR: No texture files loaded.";
         return;
       }
 
-      logEl.textContent = "";
+      const size = parseInt(resSelect.value, 10);
+      const suffix = suffixInput.value;
+      logEl.innerHTML = "";
+
       const canvas = document.createElement("canvas");
-      canvas.width = 1024;
-      canvas.height = 1024;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      for (const file of files) {
+      for (const file of selectedFiles) {
         const bitmap = await createImageBitmap(file);
-        ctx.clearRect(0, 0, 1024, 1024);
-        ctx.drawImage(bitmap, 0, 0, 1024, 1024);
+        const srcDims = `${bitmap.width}x${bitmap.height}`;
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(bitmap, 0, 0, size, size);
         bitmap.close();
 
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         const baseName = file.name.replace(/\.[^.]+$/, "");
+        const outName = `${baseName}${suffix}.png`;
+
         link.href = url;
-        link.download = `${baseName}${suffix}.png`;
+        link.download = outName;
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1500);
 
-        log(`Exported ${baseName}${suffix}.png`);
+        const line = document.createElement("div");
+        line.innerHTML = `&gt; <span class="ok">[OK]</span> ${file.name} (${srcDims}) &rarr; ${outName}`;
+        logEl.appendChild(line);
       }
     });
   </script>
