@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1024×1024 Texture Batch Resizer</title>
+  <style>
+    :root {
+      --bg: #111317;
+      --panel: #191d24;
+      --border: #2b3240;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-text: #081018;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 36px 18px;
+    }
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.4rem; }
+    p { margin: 0 0 18px; color: var(--muted); line-height: 1.5; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    input[type="file"] { color: var(--muted); }
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    input[type="text"] {
+      width: 130px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+    button {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.06); }
+    #log {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      white-space: pre-line;
+      min-height: 72px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>1024×1024 Texture Batch Resizer</h1>
+    <p>Runs 100% locally in your browser—no uploads, accounts, or paywalls.</p>
+
+    <div class="controls">
+      <input id="files" type="file" accept="image/*" multiple />
+      <label>
+        Suffix
+        <input id="suffix" type="text" value="_1024" />
+      </label>
+      <button id="run" type="button">Resize &amp; Download PNGs</button>
+    </div>
+
+    <div id="log">Waiting for files...</div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const log = (msg) => { logEl.textContent += msg + "\n"; };
+
+    document.getElementById("run").addEventListener("click", async () => {
+      const files = Array.from(document.getElementById("files").files);
+      const suffix = document.getElementById("suffix").value;
+      if (!files.length) {
+        logEl.textContent = "Select one or more texture files first.";
+        return;
+      }
+
+      logEl.textContent = "";
+      const canvas = document.createElement("canvas");
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      for (const file of files) {
+        const bitmap = await createImageBitmap(file);
+        ctx.clearRect(0, 0, 1024, 1024);
+        ctx.drawImage(bitmap, 0, 0, 1024, 1024);
+        bitmap.close();
+
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const baseName = file.name.replace(/\.[^.]+$/, "");
+        link.href = url;
+        link.download = `${baseName}${suffix}.png`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+        log(`Exported ${baseName}${suffix}.png`);
+      }
+    });
+  </script>
+</body>
+</html>
